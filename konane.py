@@ -102,6 +102,18 @@ class Board:
         if tox!=0: #means not removing the piece (at the first move you remove the piece)
 
             self.board_add(tox,toy,color)
+
+
+
+    def get_all_next_boards(self, color):
+        moves = self.get_possible_move(color)
+        boards = []
+        for pair in moves:
+            for des in pair[1]:
+                boards.append(self.get_next_board(pair[0][0],pair[0][1],des[0],des[1],color))
+
+        return boards
+
     '''get a random move from the movable list and generate the next board'''
     def random_move(self,color):
         import random
@@ -137,6 +149,13 @@ class Board:
             return self.get_piece(x, (toy+y)/2) is color and not self.out_of_bound(x, toy) and self.get_piece(x, toy) is ' '
         return False
 
+    def get_possible_move_num(self,color):
+        moves = self.get_possible_move(color)
+        count = 0
+        for pair in moves:
+            count += len(pair[1])
+
+        return count
 
 
     '''helper method to recursively find the mult step jump
@@ -163,6 +182,26 @@ class Board:
                 return self.recursive_move_helper(x,y-2,movable,ox,oy)
 
         return movable
+
+    def get_all_actions(self,color):
+        moves = self.get_possible_move(color)
+        actions = []
+        for pair in moves:
+            for des in pair[1]:
+                actions.append((pair[0][0],pair[0][1],des[0],des[1]))
+
+        return actions
+
+    def get_next_board(self,fromx,fromy,tox,toy,color):
+        import copy
+        c = copy.deepcopy(self)
+        c.board_remove(fromx, fromy)
+
+        if tox!=0: #means not removing the piece (at the first move you remove the piece)
+
+            c.board_add(tox,toy,color)
+
+        return c
 
     def out_of_bound(self, x, y):
         if x > self.width or y > self.width or x == 0 or y == 0:
@@ -210,15 +249,76 @@ class Board:
 
         return True
 
+
+        ##AI related ##
+
+    def nullHeuristic(self):
+        return 0
+
+
+    """return move that I have - move that my opponent have"""
+    def firstHeuristic(self,color):
+        opcolor = None
+        if color == '0':
+            opcolor = '1'
+        else:
+            opcolor = '0'
+        mymoves = self.get_possible_move_num(color)
+        opmoves = self.get_possible_move_num(opcolor)
+        if mymoves == 0:
+            return -float("inf")
+        if opmoves == 0:
+            return float("inf")
+        return mymoves-opmoves
+
+def minimax(board, depth, alpha, beta, isMax, color, move):
+    if depth == 0:
+            return (board.firstHeuristic(color),(0,0,0,0))
+    if isMax:
+        value = -float("inf")
+        actions = board.get_all_actions(color)
+        bestaction = None
+        for action in actions:
+            print('yes')
+            nextboard = board.get_next_board(action[0],action[1],action[2],action[3],color)
+            curvalue = minimax(nextboard, depth - 1, alpha, beta, False, color,move)[0]
+            curaction = minimax(nextboard, depth - 1, alpha, beta, False, color,move)[1]
+            if curvalue > value:
+                bestaction = action
+            else:
+                bestaction = curaction
+            value = max(value, curvalue)
+            alpha = max(alpha, value)
+            if alpha >= beta:
+                break
+        return (value,bestaction)
+
+    else:
+        value = float("inf")
+
+        actions = board.get_all_actions(color)
+        for action in actions:
+            nextboard = board.get_next_board(action[0], action[1], action[2], action[3], color)
+            curvalue = minimax(nextboard, depth - 1, alpha, beta, True, color,move)[0]
+            curaction = minimax(nextboard, depth - 1, alpha, beta, True, color,move)[1]
+            if value > curaction:
+                bestaction = action
+            else:
+                bestaction = curaction
+            value = min(value, curvalue)
+            beta = min(beta, value)
+            if alpha >= beta:
+                break
+        return (value, bestaction)
+
 def start_game(width):
     board = Board(width)
     board.create_board(width)
     return board
 
 
+
 board = start_game(8)
-
-
 color = raw_input("pls choose black(1) or white(0)")
 if color == '1':
     print("you choosed black, start the game now")
@@ -240,6 +340,7 @@ while(1):
     print('your possible moves are')
     print(moves)
     while(1):
+
         try:
             var = raw_input("pls enter the move num")
             var.split(" ")
@@ -250,10 +351,15 @@ while(1):
                 print("invalide move")
             else:
                 board.next_board(fromx,fromy,tox,toy,color)
-                board.print_board(board.board)
-                break
+                print("heuristic return " + str(board.firstHeuristic(color)))
+
         except Exception:
             print("input error")
+
+        print("minimax return " + str(minimax(board,3,float('inf'),-float('inf'),True,color,[])))
+
+        board.print_board(board.board)
+        break
 
     if board.random_move(oppocolor) is None:
         print("you win")
