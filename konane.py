@@ -42,7 +42,7 @@ class Board:
         else:
             return self.board[y][x]
 
-    def get_one_piece_movable(self, x, y, flag = False):
+    def get_one_piece_movable(self, x, y):
         movable = []
         if self.out_of_bound(x, y) or self.get_piece(x,y) is ' ':
             print("not valid coordinate")
@@ -71,30 +71,18 @@ class Board:
         else:
             newmove = []
             moves = []
-            if flag:
-                print(str(x)+' '+str(y)+' '+self.get_piece(x,y))
-                print()
-                #testing
 
 
             if self.check_movable(x,y,x+2,y,self.get_piece(x,y)):
-                if flag:
-                    print("L")
                 moves.append(Move((x, y),(x+2,y),[(x+1,y)]))
 
             if self.check_movable(x,y,x-2,y,self.get_piece(x,y)):
-                if flag:
-                    print("R")
                 moves.append(Move((x, y), (x - 2, y), [(x-1, y)]))
 
             if self.check_movable(x,y,x,y+2,self.get_piece(x,y)):
-                if flag:
-                    print("G")
                 moves.append(Move((x, y), (x, y+2), [(x, y+1)]))
 
             if self.check_movable(x,y,x,y-2,self.get_piece(x,y)):
-                if flag:
-                    print("F")
                 moves.append(Move((x, y), (x, y-2), [(x , y-1)]))
 
             for move in moves:
@@ -102,13 +90,13 @@ class Board:
 
         return newmove
 
-    def get_possible_move(self,color, flag = False):
+    def get_possible_move(self,color):
         allmove = []
         for row in range(1,self.width + 1):
             for col in range(1,self.width + 1):
 
                 if self.get_piece(row,col) == color:
-                    moves = self.get_one_piece_movable(row, col, flag )
+                    moves = self.get_one_piece_movable(row, col)
                     if len(moves)!=0:
                         allmove = allmove+moves
         return allmove
@@ -165,9 +153,9 @@ class Board:
         else:
             opcolor = '1'
         if x != tox:
-            return self.get_piece((tox + x) / 2, toy) is opcolor and not self.out_of_bound(tox, y) and self.get_piece(tox, y) is ' '
+            return self.get_piece((tox + x) / 2, toy) == opcolor and not self.out_of_bound(tox, y) and self.get_piece(tox, y) is ' '
         elif y != toy:
-            return self.get_piece(x, (toy+y)/2) is opcolor and not self.out_of_bound(x, toy) and self.get_piece(x, toy) is ' '
+            return self.get_piece(x, (toy+y)/2) == opcolor and not self.out_of_bound(x, toy) and self.get_piece(x, toy) is ' '
         return True
 
     def get_possible_move_num(self,color):
@@ -403,9 +391,8 @@ while(1):
     while(1):
         while(1):
             try:
-                #var = raw_input("pls enter the move num")
-                #index = int(var)
-                index = 1
+                var = raw_input("pls enter the move num")
+                index = int(var)
                 if index>len(moves):
                     print("invalide move")
                     continue
@@ -423,10 +410,9 @@ while(1):
         #print("minimax return " + str(minimax(board,3,float('inf'),-float('inf'),True,color,[])))
 
         board.print_board()
-        info = board.board
+        '''info = board.board
         board = start_game(8)
-        board.print_board()
-        board.board=info
+        board.board=info'''
 
         break
 
@@ -437,6 +423,7 @@ while(1):
 
         print('opponent move: ')
         print(str(board.random_move(oppocolor)))
+        #print(board.next_board(board.get_possible_move(oppocolor)[0],oppocolor))
 
         print("after black moved, the board:")
 
@@ -444,9 +431,3 @@ while(1):
 
 board.print_move(board.get_possible_move('1'))
 print(board.board)
-
-c = start_game(8)
-c.board = board.board
-print('for c')
-c.print_board()
-c.print_move(c.get_possible_move('1'))
