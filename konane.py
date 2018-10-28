@@ -153,9 +153,9 @@ class Board:
         else:
             opcolor = '1'
         if x != tox:
-            return self.get_piece((tox + x) / 2, toy) == opcolor and not self.out_of_bound(tox, y) and self.get_piece(tox, y) is ' '
+            return self.get_piece((tox + x) / 2, toy) == opcolor and not self.out_of_bound(tox, y) and self.get_piece(tox, y) == ' '
         elif y != toy:
-            return self.get_piece(x, (toy+y)/2) == opcolor and not self.out_of_bound(x, toy) and self.get_piece(x, toy) is ' '
+            return self.get_piece(x, (toy+y)/2) == opcolor and not self.out_of_bound(x, toy) and self.get_piece(x, toy) == ' '
         return True
 
     def get_possible_move_num(self,color):
@@ -172,33 +172,34 @@ class Board:
         ox = move.fr[0]
         oy = move.fr[1]
         removes = move.removes
-        if self.check_movable(x, y, x + 2, y,self.get_piece(ox,oy)):
-            if removes.count((x+1,y))==0:
-                newmove = Move((ox, oy), (x + 2, y), removes + [(x + 1, y),])
-                if moves.count(newmove)==0:
-                    moves.append(newmove)
-                    self.recursive_move_helper(newmove,moves)
+        if y == oy: #original move is horizontal
+            if self.check_movable(x, y, x + 2, y,self.get_piece(ox,oy)):
+                if removes.count((x+1,y))==0:
+                    newmove = Move((ox, oy), (x + 2, y), removes + [(x + 1, y),])
+                    if moves.count(newmove)==0:
+                        moves.append(newmove)
+                        self.recursive_move_helper(newmove,moves)
 
-        if self.check_movable(x, y, x - 2, y, self.get_piece(ox,oy)):
-            if removes.count((x-1,y))==0:
-                newmove = Move((ox, oy), (x - 2, y), removes + [(x - 1, y),])
-                if moves.count(newmove) == 0:
-                    moves.append(newmove)
-                    self.recursive_move_helper(newmove,moves)
+            if self.check_movable(x, y, x - 2, y, self.get_piece(ox,oy)):
+                if removes.count((x-1,y))==0:
+                    newmove = Move((ox, oy), (x - 2, y), removes + [(x - 1, y),])
+                    if moves.count(newmove) == 0:
+                        moves.append(newmove)
+                        self.recursive_move_helper(newmove,moves)
+        else:
+            if self.check_movable(x, y, x, y + 2, self.get_piece(ox,oy)):
+                if removes.count((x,y+1))==0:
+                    newmove = Move((ox, oy), (x , y +2), removes + [(x, y+1),])
+                    if moves.count(newmove) == 0:
+                        moves.append(newmove)
+                        self.recursive_move_helper(newmove,moves)
 
-        if self.check_movable(x, y, x, y + 2, self.get_piece(ox,oy)):
-            if removes.count((x,y+1))==0:
-                newmove = Move((ox, oy), (x , y +2), removes + [(x, y+1),])
-                if moves.count(newmove) == 0:
-                    moves.append(newmove)
-                    self.recursive_move_helper(newmove,moves)
-
-        if self.check_movable(x, y, x, y - 2, self.get_piece(ox,oy)):
-            if removes.count((x,y -1))==0:
-                newmove = Move((ox, oy), (x , y -2), removes + [(x, y-1),])
-                if moves.count(newmove) == 0:
-                    moves.append(newmove)
-                    self.recursive_move_helper(newmove,moves)
+            if self.check_movable(x, y, x, y - 2, self.get_piece(ox,oy)):
+                if removes.count((x,y -1))==0:
+                    newmove = Move((ox, oy), (x , y -2), removes + [(x, y-1),])
+                    if moves.count(newmove) == 0:
+                        moves.append(newmove)
+                        self.recursive_move_helper(newmove,moves)
         cleanlist = []
         [cleanlist.append(x) for x in moves if x not in cleanlist]
         return cleanlist
@@ -294,44 +295,33 @@ class Board:
             index += 1
             print(str(index)+": "+str(move))
 
-def minimax(board, depth, alpha, beta, isMax, color, move):
+def minimax(board, depth, alpha, beta, isMax, color):
     if depth == 0:
-            return (board.firstHeuristic(color),(0,0,0,0))
+        return board.firstHeuristic(color)
     if isMax:
         value = -float("inf")
-        moves = board.get_possible_move(color)
-        bestaction = None
-        for move in moves:
+        actions = board.get_possible_move(color)
+        for move in actions:
             nextboard = board.get_next_board(move,color)
-            curvalue = minimax(nextboard, depth - 1, alpha, beta, False, color,move)[0]
-            curaction = minimax(nextboard, depth - 1, alpha, beta, False, color,move)[1]
-            if curvalue > value:
-                bestaction = move
-            else:
-                bestaction = curaction
+            curvalue = minimax(nextboard, depth - 1, alpha, beta, False, color)
             value = max(value, curvalue)
+            if value >= beta:
+                return value
             alpha = max(alpha, value)
-            if alpha >= beta:
-                break
-        return (value,bestaction)
+        return value
 
     else:
         value = float("inf")
 
         actions = board.get_possible_move(color)
-        for action in actions:
+        for move in actions:
             nextboard = board.get_next_board(move, color)
-            curvalue = minimax(nextboard, depth - 1, alpha, beta, True, color,move)[0]
-            curaction = minimax(nextboard, depth - 1, alpha, beta, True, color,move)[1]
-            if value > curaction:
-                bestaction = action
-            else:
-                bestaction = curaction
+            curvalue = minimax(nextboard, depth - 1, alpha, beta, True, color)
             value = min(value, curvalue)
+            if value <= alpha:
+                return value
             beta = min(beta, value)
-            if alpha >= beta:
-                break
-        return (value, bestaction)
+        return value
 
 
 class Move:
@@ -360,14 +350,14 @@ def start_game(width):
 board = start_game(8)
 
 
-'''board.board = [[' ', 1, 2, 3, 4, 5, 6, 7, 8], [1, '1', '0', ' ', ' ', '1', '0', '1', '0'], [2, ' ', ' ', ' ', ' ', ' ', ' ', ' ', '1'], [3, ' ', '0', ' ', ' ', ' ', '0', '1', ' '], [4, ' ', ' ', ' ', '1', ' ', '1', ' ', ' '], [5, ' ', '0', ' ', ' ', '1', ' ', '1', ' '], [6, '0', ' ', '0', ' ', '0', ' ', '0', ' '], [7, '1', ' ', ' ', ' ', ' ', '0', '1', ' '], [8, '0', '1', ' ', '1', '0', '1', ' ', '1']]
 
+'''board.board = [[' ', 1, 2, 3, 4, 5, 6, 7, 8], [1, ' ', '0', '1', '0', '1', '0', '1', '0'], [2, ' ', '1', '0', '1', '0', '1', '0', '1'], [3, '1', '0', '1', '0', '1', '0', '1', '0'], [4, '0', '1', '0', '1', '0', '1', '0', '1'], [5, '1', '0', '1', '0', '1', '0', '1', '0'], [6, '0', '1', '0', '1', '0', '1', '0', '1'], [7, '1', '0', '1', '0', '1', '0', '1', '0'], [8, '0', '1', '0', '1', '0', '1', '0', '1']]
+board.print_move(board.get_possible_move('0'))'''
+
+'''board.next_board(board.get_possible_move('1')[0],'1')
+board.next_board(board.get_possible_move('0')[0],'0')
 board.print_board()
-board.print_move(board.get_possible_move('0'))
-board.print_move(board.get_possible_move('1'))'''
-
-
-
+board.print_move(board.get_possible_move('0'))'''
 color = raw_input("pls choose black(1) or white(0)")
 if color == '1':
     print("you choosed black, start the game now")
@@ -388,6 +378,10 @@ while(1):
         break
     print('your possible moves are')
     board.print_move(moves)
+
+
+    print("heuristic return " + str(board.firstHeuristic(color)))
+    print("minimax return " + str(minimax(board, 3, -float('inf'), float('inf'), True, color)))
     while(1):
         while(1):
             try:
@@ -398,7 +392,6 @@ while(1):
                     continue
                 else:
                     board.next_board(moves[index-1],color)
-                    print("heuristic return " + str(board.firstHeuristic(color)))
 
 
             except Exception:
@@ -407,12 +400,9 @@ while(1):
                 break
 
 
-        #print("minimax return " + str(minimax(board,3,float('inf'),-float('inf'),True,color,[])))
 
         board.print_board()
-        '''info = board.board
-        board = start_game(8)
-        board.board=info'''
+
 
         break
 
@@ -423,9 +413,12 @@ while(1):
 
         print('opponent move: ')
         print(str(board.random_move(oppocolor)))
+
         #print(board.next_board(board.get_possible_move(oppocolor)[0],oppocolor))
 
         print("after black moved, the board:")
+
+        board.print_board()
 
 
 
