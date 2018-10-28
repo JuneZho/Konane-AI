@@ -8,9 +8,10 @@ class Board:
         self.width = width
         self.board = [[' ' for col in range(self.width + 1)] for row in range(self.width + 1)];  # 2D arr
 
-    "initiate 8x8 board, 1 black, 0 white"
+
 
     def create_board(self, width):
+        """ initiate 8x8 board, 1 black, 0 white"""
         for row in range(self.width + 1):
             for col in range(self.width + 1):
                 if (row == 0):
@@ -28,13 +29,24 @@ class Board:
 
         return self.board
 
+
     def print_board(self):
+        """print the board"""
         for row in range(self.width + 1):
             for col in range(self.width + 1):
                 print(self.board[row][col]),
             print
 
+
     def get_piece(self, x, y):
+        """get the color of the piece given x,y coordinate
+
+        :parameter
+        x : x coordinate of the piece
+        y : y coodinate of the piece
+        :return
+        color of this piece
+        """
         if self.out_of_bound(x, y):
             # print("not valid coordinate")
             # raise Exception('coordinate not in range')
@@ -42,7 +54,17 @@ class Board:
         else:
             return self.board[y][x]
 
+
     def get_one_piece_movable(self, x, y):
+
+        """get all the move of one piece given the coordinate of that piece
+
+
+        :parameter
+        x : x coordinate of the piece
+        y : y coodinate of the piece
+        :return
+        the set of all possible move for this piece"""
         movable = []
         if self.out_of_bound(x, y) or self.get_piece(x,y) is ' ':
             print("not valid coordinate")
@@ -91,6 +113,12 @@ class Board:
         return newmove
 
     def get_possible_move(self,color):
+        """get of the possible move of a given color on the board
+
+         :parameter
+        color : color of the piece
+        :return
+        the set of all possible move"""
         allmove = []
         for row in range(1,self.width + 1):
             for col in range(1,self.width + 1):
@@ -100,9 +128,14 @@ class Board:
                     if len(moves)!=0:
                         allmove = allmove+moves
         return allmove
-    '''generate the next board with the color, from coordinate and to coordinate'''
+
     def next_board(self,move,color):
 
+        """generate the next board with the color, from coordinate and to coordinate
+
+        :parameter
+        move : the move to apply
+        color : color of the piece"""
         self.board_remove(move.fr[0], move.fr[1])
 
         for remove in move.removes:
@@ -113,17 +146,13 @@ class Board:
 
 
 
-    def get_all_next_boards(self, color):
-        moves = self.get_possible_move(color)
-        boards = []
-        for pair in moves:
-            for des in pair[1]:
-                boards.append(self.get_next_board(pair[0][0],pair[0][1],des[0],des[1],color))
-
-        return boards
-
-    '''get a random move from the movable list and generate the next board'''
     def random_move(self,color):
+        """get a random move from the movable list and generate the next board
+        :parameter
+        color : the color to apply the random move
+        :return
+        the random move"""
+
         import random
         moves = self.get_possible_move(color)
         if len(moves)==0:
@@ -135,6 +164,12 @@ class Board:
 
 
     def check_lost(self,color):
+        """check if a given color is lost
+        :parameter
+        color : the color to check
+        :return
+        if the given color is lost
+        """
         if len(self.get_possible_move(color))==0:
             return True
         return  False
@@ -142,12 +177,29 @@ class Board:
     """check if the position x,y movable to tox, tox given a specific color"""
 
     def board_remove(self,x,y):
+        """remove the piece
+        :parameter
+        x : x coordinate of this piece
+        y : y coordinate of this piece"""
         self.board[y][x] = ' '
 
     def board_add(self,x,y,color):
+        """add a piece
+        :parameter
+        x : x coordinate of this piece to add
+        y : y coordinate of this piece
+        color : the color of this piece"""
         self.board[y][x] = color
 
     def check_movable(self, x, y, tox, toy, color):
+        """check if a given piece is movable to a given position
+         :parameter
+        x : x coordinate of this piece
+        y : y coordinate of this piece
+        tox : x coordinate of this place to move to
+        toy : y coordinate of this place to move to
+        color : the color of this piece
+        """
         if color == '1': #change this color to oppo side, to check if the intermediate piece is of that color
             opcolor = '0'
         else:
@@ -159,14 +211,21 @@ class Board:
         return True
 
     def get_possible_move_num(self,color):
+        """get the num of all the possible move given a color
+        :parameter color : the color of the pieces
+        :return the num of the moves"""
         moves = self.get_possible_move(color)
 
         return len(moves)
 
 
-    '''helper method to recursively find the mult step jump
-    :parameter ox: original x of the piece  oy: original y of the piece, movable set of the piece, x,y is the coordinate we want to explore'''
     def recursive_move_helper(self, move,moves):
+        """helper method to recursively find the mult step jump
+        :parameter
+        move : the move to check for multi jump
+        moves : all the moves that the piece currently have
+        :return
+        the new moves with mult jump appended"""
         x = move.to[0]
         y = move.to[1]
         ox = move.fr[0]
@@ -200,11 +259,17 @@ class Board:
                     if moves.count(newmove) == 0:
                         moves.append(newmove)
                         self.recursive_move_helper(newmove,moves)
-        cleanlist = []
+        cleanlist = []#delete repeated moves
         [cleanlist.append(x) for x in moves if x not in cleanlist]
         return cleanlist
 
     def get_next_board(self,move,color):
+        """get the next board with a given color and move
+        :parameter
+        move : the move to apply
+        color : the color of the piece
+        :return
+        the next board"""
         import copy
         c = copy.deepcopy(self)
         c.board_remove(move.fr[0], move.fr[1])
@@ -218,11 +283,17 @@ class Board:
         return c
 
     def out_of_bound(self, x, y):
+        """check if a coordinate if out of bound
+
+        :parameter
+        x : x coordinate of the piece
+        y : y coodinate of the piece"""
         if x > self.width or y > self.width or x == 0 or y == 0:
             return True
         return False
 
     def is_initial(self):
+        """check if the board is at the first move """
         for row in range(self.width + 1):
             for col in range(self.width + 1):
                 if (row == 0):
@@ -242,7 +313,9 @@ class Board:
         return True
 
     def is_second(self):
-        if board.is_initial():
+
+        """check if the board is at the second move """
+        if self.is_initial():
             return False
         for row in range(self.width + 1):
             for col in range(self.width + 1):
@@ -265,8 +338,6 @@ class Board:
 
         return False
 
-        def change_board(board):
-            self.board = board
 
         ##AI related ##
 
@@ -274,8 +345,9 @@ class Board:
         return 0
 
 
-    """return move that I have - move that my opponent have"""
     def firstHeuristic(self,color):
+
+        """return move that I have - move that my opponent have"""
         opcolor = None
         if color == '0':
             opcolor = '1'
@@ -346,81 +418,74 @@ def start_game(width):
     return board
 
 
-
-board = start_game(8)
-
-
-
-'''board.board = [[' ', 1, 2, 3, 4, 5, 6, 7, 8], [1, ' ', '0', '1', '0', '1', '0', '1', '0'], [2, ' ', '1', '0', '1', '0', '1', '0', '1'], [3, '1', '0', '1', '0', '1', '0', '1', '0'], [4, '0', '1', '0', '1', '0', '1', '0', '1'], [5, '1', '0', '1', '0', '1', '0', '1', '0'], [6, '0', '1', '0', '1', '0', '1', '0', '1'], [7, '1', '0', '1', '0', '1', '0', '1', '0'], [8, '0', '1', '0', '1', '0', '1', '0', '1']]
-board.print_move(board.get_possible_move('0'))'''
-
-'''board.next_board(board.get_possible_move('1')[0],'1')
-board.next_board(board.get_possible_move('0')[0],'0')
-board.print_board()
-board.print_move(board.get_possible_move('0'))'''
-color = raw_input("pls choose black(1) or white(0)")
-if color == '1':
-    print("you choosed black, start the game now")
-elif color == '0':
-    print("you choosed white, start the game now")
-    board.random_move('1')
-    print("after black removed and move, the board:")
-    board.print_board()
-else: print("yo, wrong input")
-if color == '0':
-    oppocolor = '1'
-else:
-    oppocolor = '0'
-while(1):
-    moves = board.get_possible_move(color)
-    if len(moves) == 0:
-        print('you lost')
-        break
-    print('your possible moves are')
-    board.print_move(moves)
-
-
-    print("heuristic return " + str(board.firstHeuristic(color)))
-    print("minimax return " + str(minimax(board, 3, -float('inf'), float('inf'), True, color)))
-    while(1):
-        while(1):
-            try:
-                var = raw_input("pls enter the move num")
-                index = int(var)
-                if index>len(moves):
-                    print("invalide move")
-                    continue
-                else:
-                    board.next_board(moves[index-1],color)
-
-
-            except Exception:
-                print("input error")
-            else:
-                break
-
-
-
+def player_vs_random():
+    board = start_game(8)
+    color = raw_input("pls choose black(1) or white(0)")
+    if color == '1':
+        print("you choosed black, start the game now")
+    elif color == '0':
+        print("you choosed white, start the game now")
+        board.random_move('1')
+        print("after black removed and move, the board:")
         board.print_board()
-
-
-        break
-
-    if len( board.get_possible_move(oppocolor)) == 0:
-        print("you win")
-        break
+    else: print("yo, wrong input")
+    if color == '0':
+        oppocolor = '1'
     else:
-
-        print('opponent move: ')
-        print(str(board.random_move(oppocolor)))
-
-        #print(board.next_board(board.get_possible_move(oppocolor)[0],oppocolor))
-
-        print("after black moved, the board:")
-
-        board.print_board()
-
+        oppocolor = '0'
+    while(1):
+        moves = board.get_possible_move(color)
+        if len(moves) == 0:
+            print('you lost')
+            break
+        print('your possible moves are')
+        board.print_move(moves)
 
 
-board.print_move(board.get_possible_move('1'))
-print(board.board)
+        print("heuristic return " + str(board.firstHeuristic(color)))
+        print("minimax return " + str(minimax(board, 3, -float('inf'), float('inf'), True, color)))
+        while(1):
+            while(1):
+                try:
+                    var = raw_input("pls enter the move num")
+                    index = int(var)
+                    if index>len(moves):
+                        print("invalide move")
+                        continue
+                    else:
+                        board.next_board(moves[index-1],color)
+
+
+                except Exception:
+                    print("input error")
+                else:
+                    break
+
+
+
+            board.print_board()
+
+
+            break
+
+        if len( board.get_possible_move(oppocolor)) == 0:
+            print("you win")
+            break
+        else:
+
+            print('opponent move: ')
+            print(str(board.random_move(oppocolor)))
+
+            #print(board.next_board(board.get_possible_move(oppocolor)[0],oppocolor))
+
+            print("after black moved, the board:")
+
+            board.print_board()
+
+
+
+    board.print_move(board.get_possible_move('1'))
+    print(board.board)
+
+
+player_vs_random()
