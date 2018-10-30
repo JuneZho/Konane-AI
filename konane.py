@@ -367,23 +367,36 @@ class Board:
             index += 1
             print(str(index)+": "+str(move))
 
+counter = 0
+cutoffs = 0
+branchFactor = 0
+calls = 0
 
 def abprunning(board, depth, alpha, beta, isMax, color):
+    global counter
+    global cutoffs
+    global branchFactor
+    global calls
     if depth == 0:
-        return board.firstHeuristic(color)
+        counter += 1
+        return board.firstHeuristic(color), None
     if isMax:
-
         value = -float("inf")
         actions = board.get_possible_move(color)
         bestmove = None
+        calls += 1
         for move in actions:
+            branchFactor += 1
             nextboard = board.get_next_board(move,color)
-            curvalue = abprunning(nextboard, depth - 1, alpha, beta, False, color)
+            curvalue = abprunning(nextboard, depth - 1, alpha, beta, False, color)[0]
+            if curvalue > value:
+                bestmove = move
             value = max(value, curvalue)
             if value >= beta:
-                return value
+                cutoffs += 1
+                return value, bestmove
             alpha = max(alpha, value)
-        return value
+        return value, bestmove
 
     else:
         value = float("inf")
@@ -391,32 +404,45 @@ def abprunning(board, depth, alpha, beta, isMax, color):
             oppocolor = '0'
         else:
             oppocolor = '1'
+
+        calls += 1
         actions = board.get_possible_move(oppocolor)
         for move in actions:
+            branchFactor += 1
             nextboard = board.get_next_board(move, oppocolor)
-            curvalue = abprunning(nextboard, depth - 1, alpha, beta, True, color)
+            curvalue = abprunning(nextboard, depth - 1, alpha, beta, True, color)[0]
             value = min(value, curvalue)
             if value <= alpha:
-                return value
+                cutoffs += 1
+                return value,None
             beta = min(beta, value)
-        return value
+        return value, None
 
 
 def minimax(board, depth, isMax, color):
+    global counter
+    global cutoffs
+    global branchFactor
+    global calls
     if depth == 0:
-        return board.firstHeuristic(color)
+        counter += 1
+        return board.firstHeuristic(color),None
     if isMax:
-
+        calls += 1
         value = -float("inf")
         actions = board.get_possible_move(color)
         bestmove = None
         for move in actions:
+            branchFactor += 1
             nextboard = board.get_next_board(move, color)
-            curvalue = minimax(nextboard, depth - 1, False, color)
+            curvalue = minimax(nextboard, depth - 1, False, color)[0]
+            if curvalue > value:
+                bestmove = move
             value = max(value, curvalue)
-        return value
+        return value,bestmove
 
     else:
+        calls += 1
         value = float("inf")
         if color == '1':
             oppocolor = '0'
@@ -424,10 +450,12 @@ def minimax(board, depth, isMax, color):
             oppocolor = '1'
         actions = board.get_possible_move(oppocolor)
         for move in actions:
+
+            branchFactor += 1
             nextboard = board.get_next_board(move, oppocolor)
-            curvalue = minimax(nextboard, depth - 1, True, color)
+            curvalue = minimax(nextboard, depth - 1, True, color)[0]
             value = min(value, curvalue)
-        return value
+        return value,None
 
 
 class Move:
@@ -460,9 +488,9 @@ def player_vs_random():
     elif color == '0':
         print("you choosed white, start the game now")
         board.random_move('1')
-        print("after black removed and move, the board:")
+        print("after opponent removed and move, the board:")
         board.print_board()
-    else: print("yo, wrong input")
+    else: print("wrong input")
     if color == '0':
         oppocolor = '1'
     else:
@@ -477,7 +505,14 @@ def player_vs_random():
 
 
         print("heuristic return " + str(board.firstHeuristic(color)))
-        print("minimax return " + str(minimax(board, 3, -float('inf'), float('inf'), True, color)))
+        abpru = abprunning(board, 3, -float('inf'), float('inf'), True, color)
+        print("anprunning return " + str(abpru[0]))
+        print("anprunning return " + abpru[1].__str__())
+        print("average branching " +str(branchFactor / calls))
+        print(counter)
+        print("minimax return "+ str(minimax(board, 3, True, color)))
+        print("average branching " + str(branchFactor / calls))
+        print(counter)
         while(1):
             while(1):
                 try:
@@ -519,7 +554,60 @@ def player_vs_random():
 
 
     board.print_move(board.get_possible_move('1'))
-    print(board.board)
 
 
-player_vs_random()
+def play_vs_agent():
+    board = start_game(8)
+    color = raw_input("pls choose black(1) or white(0)")
+    if color == '1':
+        print("you choosed black, start the game now")
+    elif color == '0':
+        print("you choosed white, start the game now")
+        board.next_board(abprunning(board, 3, -float('inf'), float('inf'), True, color)[1],'1')
+        print("after opponent removed and move, the board:")
+        board.print_board()
+    else:
+        print("wrong input")
+    if color == '0':
+        oppocolor = '1'
+    else:
+        oppocolor = '0'
+    while (1):
+        moves = board.get_possible_move(color)
+        if len(moves) == 0:
+            print('you lost')
+            break
+        print('your possible moves are')
+        board.print_move(moves)
+
+
+def random_vs_agent(depth,isabprunning):
+    import random
+    board = start_game(8)
+    color = random.choice(['1','0'])
+    if color == '0':
+        board.random_move('1')
+        board.print_board()
+    while(1):
+        board.print_board()
+        if board.check_lost(color):
+            print('agent lost')
+            break
+        if isabprunning:
+            ab = abprunning(board, depth, -float('inf'), float('inf'), True, color)
+        else:
+            ab = minimax(board, depth, True, color)
+        board.next_board(ab[1], color)
+
+        if color =='1':
+            oppocolor ='0'
+        else:
+            oppocolor ='1'
+        if board.check_lost(oppocolor):
+            print('random lost')
+            break
+        board.random_move(oppocolor)
+
+
+
+random_vs_agent(3,False)
