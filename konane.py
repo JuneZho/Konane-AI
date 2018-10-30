@@ -587,11 +587,16 @@ def random_vs_agent(depth,isabprunning):
     color = random.choice(['1','0'])
     if color == '0':
         board.random_move('1')
-        board.print_board()
+        #board.print_board()
     while(1):
-        board.print_board()
+        #board.print_board()
         if board.check_lost(color):
             print('agent lost')
+            if(isabprunning):
+                result = [1, branchFactor / calls, counter, cutoffs]
+            else:
+                result = [0, branchFactor / calls, counter, cutoffs]
+            return result
             break
         if isabprunning:
             ab = abprunning(board, depth, -float('inf'), float('inf'), True, color)
@@ -605,9 +610,32 @@ def random_vs_agent(depth,isabprunning):
             oppocolor ='1'
         if board.check_lost(oppocolor):
             print('random lost')
+            if(isabprunning):
+                result = [1, branchFactor / calls, counter, cutoffs]
+            else:
+                result = [0, branchFactor / calls, counter, cutoffs]
+            return result
             break
         board.random_move(oppocolor)
 
+import csv
+
+myTest = [1,2,3,4,5,6]
+with open('konane_result.csv','wb')as file:
+    writer = csv.writer(file, delimiter=',')
+    writer.writerow(["isabprunning","average branching","counter","cutoffs"])
+
+    for item in myTest:
+        writer.writerow(random_vs_agent(item,False))
+        counter = 0
+        cutoffs = 0
+        branchFactor = 0
+        calls = 0
+        writer.writerow(random_vs_agent(item,True))
+        counter = 0
+        cutoffs = 0
+        branchFactor = 0
+        calls = 0
 
 
-random_vs_agent(3,False)
+
