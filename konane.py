@@ -367,7 +367,8 @@ class Board:
             index += 1
             print(str(index)+": "+str(move))
 
-def minimax(board, depth, alpha, beta, isMax, color):
+
+def abprunning(board, depth, alpha, beta, isMax, color):
     if depth == 0:
         return board.firstHeuristic(color)
     if isMax:
@@ -377,7 +378,7 @@ def minimax(board, depth, alpha, beta, isMax, color):
         bestmove = None
         for move in actions:
             nextboard = board.get_next_board(move,color)
-            curvalue = minimax(nextboard, depth - 1, alpha, beta, False, color)
+            curvalue = abprunning(nextboard, depth - 1, alpha, beta, False, color)
             value = max(value, curvalue)
             if value >= beta:
                 return value
@@ -393,12 +394,41 @@ def minimax(board, depth, alpha, beta, isMax, color):
         actions = board.get_possible_move(oppocolor)
         for move in actions:
             nextboard = board.get_next_board(move, oppocolor)
-            curvalue = minimax(nextboard, depth - 1, alpha, beta, True, color)
+            curvalue = abprunning(nextboard, depth - 1, alpha, beta, True, color)
             value = min(value, curvalue)
             if value <= alpha:
                 return value
             beta = min(beta, value)
         return value
+
+
+def minimax(board, depth, isMax, color):
+    if depth == 0:
+        return board.firstHeuristic(color)
+    if isMax:
+
+        value = -float("inf")
+        actions = board.get_possible_move(color)
+        bestmove = None
+        for move in actions:
+            nextboard = board.get_next_board(move, color)
+            curvalue = minimax(nextboard, depth - 1, False, color)
+            value = max(value, curvalue)
+        return value
+
+    else:
+        value = float("inf")
+        if color == '1':
+            oppocolor = '0'
+        else:
+            oppocolor = '1'
+        actions = board.get_possible_move(oppocolor)
+        for move in actions:
+            nextboard = board.get_next_board(move, oppocolor)
+            curvalue = minimax(nextboard, depth - 1, True, color)
+            value = min(value, curvalue)
+        return value
+
 
 class Move:
     def __init__(self,fr, to, removes = []):
