@@ -371,8 +371,10 @@ def minimax(board, depth, alpha, beta, isMax, color):
     if depth == 0:
         return board.firstHeuristic(color)
     if isMax:
+
         value = -float("inf")
         actions = board.get_possible_move(color)
+        bestmove = None
         for move in actions:
             nextboard = board.get_next_board(move,color)
             curvalue = minimax(nextboard, depth - 1, alpha, beta, False, color)
@@ -384,17 +386,19 @@ def minimax(board, depth, alpha, beta, isMax, color):
 
     else:
         value = float("inf")
-
-        actions = board.get_possible_move(color)
+        if color == '1':
+            oppocolor = '0'
+        else:
+            oppocolor = '1'
+        actions = board.get_possible_move(oppocolor)
         for move in actions:
-            nextboard = board.get_next_board(move, color)
+            nextboard = board.get_next_board(move, oppocolor)
             curvalue = minimax(nextboard, depth - 1, alpha, beta, True, color)
             value = min(value, curvalue)
             if value <= alpha:
                 return value
             beta = min(beta, value)
         return value
-
 
 class Move:
     def __init__(self,fr, to, removes = []):
